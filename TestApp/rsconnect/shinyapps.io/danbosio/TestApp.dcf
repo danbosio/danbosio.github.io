@@ -1,0 +1,13 @@
+name: TestApp
+title: TestApp
+username:
+account: danbosio
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6224280
+bundleId: 5865515
+url: https://danbosio.shinyapps.io/TestApp/
+when: 1651598987.99149
+lastSyncTime: 1651598987.9915
+asMultiple: FALSE
+asStatic: FALSE

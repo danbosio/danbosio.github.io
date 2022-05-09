@@ -7,10 +7,23 @@ navbar:
       href: index.html
     - text: "About Me"
       href: about.html
-    - text: "Project"
-      href: project.html
+    - text: "Résume"
+      href: cv.html
+    - text: "Team Project Proposal"
+      href: proposal.html
+    - text: "Team Project Code"
+      href: code.html
+    - text: "Homework 4"
+      href: hw4.html
+    - text: "Shiny"
+      href: TestApp.html
+    - text: "Slideshow"
+      href: slides.html
 output:
   html_document:
-    theme: default
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: espresso
     css: style.css
 

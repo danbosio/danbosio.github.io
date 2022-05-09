@@ -1,0 +1,37 @@
+---
+title: "Happiness Project"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Happiness Project
+
+Dan Bosio
+Andy Lee
+Wen Jing Lee
+
+## Why Happiness?
+
+- Happiness affects all of us
+- Many variables that affect happiness
+- Interested in which variables affect happiness the most
+
+## Research Question
+
+Which variables seem to have the biggest impact on happiness, and does this vary by country to country?
+
+
+### Happiness and Phones
+
+```{r}
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(phones_per_1000, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Phones per 1000", y = "Happiness Score",
+                                   color = "Region")
+p
+```
+

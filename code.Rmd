@@ -1,0 +1,284 @@
+---
+title: "Code<br><br>"
+menu: main
+output: 
+  html_document:
+    df_print: paged
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: false
+    theme: united
+    highlight: espresso
+---
+
+```{r, include=FALSE}
+setwd("~/Desktop/College/Senior Year/Spring/Data analytics/Data Project/archive")
+
+library(socviz)
+library(lubridate)
+library(geofacet)
+library(ggthemes)
+library(ggrepel)
+library(ggridges)
+library(plyr)
+library(tidyverse)
+library(plotly)
+library(gapminder)
+library(stargazer)
+theme_set(theme_minimal())
+```
+# Loading the Data
+
+```{r}
+# Read 2015 Data
+h15 <- read_csv("2015.csv")
+h15 <- h15 %>%
+  dplyr::mutate(Year = 2015) %>%
+  dplyr::rename(H_rank=`Happiness Rank`, # Modify variable names
+                H_score = `Happiness Score`,
+                GDP=`Economy (GDP per Capita)`,
+                Health=`Health (Life Expectancy)`,
+                Trust=`Trust (Government Corruption)`,
+                SE=`Standard Error`,
+                dystopia_res = `Dystopia Residual`)
+
+
+# Read 2016 Data
+h16 <- read_csv("2016.csv")  
+h16 <- h16 %>%
+  dplyr::mutate(Year = 2016,
+      `Standard Error` = (`Upper Confidence Interval`-`Lower Confidence Interval`)/3.92) %>%
+              # SE = (upper limit – lower limit) / 3.92. 
+              # This is for 95% CI
+  dplyr::select(-c(`Upper Confidence Interval`,`Lower Confidence Interval`)) %>%
+  dplyr::rename(H_rank=`Happiness Rank`, # Modify variable names
+                H_score = `Happiness Score`,
+                GDP=`Economy (GDP per Capita)`,
+                Health=`Health (Life Expectancy)`,
+                Trust=`Trust (Government Corruption)`,
+                SE=`Standard Error`,
+                dystopia_res = `Dystopia Residual`)
+
+
+
+# Since we don't have a variable 'Region' starting from 2017, we will create it for 
+# each year
+h_regions <- dplyr::select(h16, Country, Region)
+
+
+
+# Read 2017 Data
+h17 <- read_csv("2017.csv")  
+h17 <- h17 %>%
+  dplyr::mutate(Year = 2017,
+         `Standard Error` = (`Whisker.high`-`Whisker.low`)/3.92) %>%
+  merge(h_regions,by="Country", all.x=T) %>%
+  dplyr::select(-c(`Whisker.high`,`Whisker.low`)) %>%
+    dplyr::rename(H_rank=`Happiness.Rank`, # Modify variable names
+                H_score = Happiness.Score,
+                GDP=Economy..GDP.per.Capita.,
+                Health=Health..Life.Expectancy.,
+                Trust=Trust..Government.Corruption.,
+                SE=`Standard Error`,
+                dystopia_res = Dystopia.Residual)
+
+
+# Read 2018 Data
+h18 <- read_csv("2018.csv")  
+h18 <- h18 %>%
+  dplyr::mutate(Year = 2018) %>%
+  dplyr::rename(H_rank=`Overall rank`, # Modify variable names
+                H_score = `Score`,
+                GDP=`GDP per capita`,
+                Country = `Country or region`,
+                Health=`Healthy life expectancy`,
+                Trust=`Perceptions of corruption`,
+                Freedom = `Freedom to make life choices`,
+                Family = `Social support`) %>%
+  merge(h_regions,by="Country", all.x=T)
+
+
+# Read 2019 Data
+h19 <- read_csv("2019.csv")  
+h19 <- h19 %>%
+  dplyr::mutate(Year = 2019) %>%
+  dplyr::rename(H_rank=`Overall rank`, # Modify variable names
+                H_score = `Score`,
+                GDP=`GDP per capita`,
+                Country = `Country or region`,
+                Health=`Healthy life expectancy`,
+                Trust=`Perceptions of corruption`,
+                Freedom = `Freedom to make life choices`,
+                Family = `Social support`) %>%
+  merge(h_regions,by="Country", all.x=T)
+
+# Combine all data into all_dat
+h_alldat <- tibble(rbind.fill(h15,h16,h17,h18,h19))
+
+glimpse(h_alldat)
+```
+
+## Merging Happiness and Country Datasets
+
+```{r}
+# Merging the world dataset and happiness sets together
+library(readr)
+countries <- read_csv("~/Downloads/countries of the world.csv")
+
+# All happiness data merged with country data. Country data is over 30 years
+# so it is the same for each year.
+
+ch_alldat <- merge(h_alldat, countries, by ="Country")
+ch15 <- merge(h15, countries, by = "Country")
+ch16 <- merge(h16, countries, by = "Country")
+ch17 <- merge(h17, countries, by = "Country")
+ch18 <- merge(h18, countries, by = "Country")
+ch19 <- merge(h19, countries, by = "Country")
+```
+
+```{r}
+library(janitor)
+
+ch15 <- ch15 %>%
+  clean_names()
+
+ch_alldat <- ch_alldat %>%
+  clean_names()
+```
+
+```{r}
+head(ch_alldat)
+```
+# Top 10 Happiest Countries
+
+```{r}
+# Top 10 happiest countries 2015 - 2019 (Mean)
+# 
+# ( top_10 <- ch_alldat %>%
+#   group_by(country) %>%
+#   dplyr::summarise(mean_rank = mean(h_rank)) %>%
+#   arrange(desc(mean_rank)) %>%
+#   filter(mean_rank <= 10) )
+
+```
+
+# Visualizations
+
+## Happiness Over Time
+
+I want to show how each region's mean happiness score has trended over the 5 year period.
+Need to group by region and year and find the mean of each.
+
+```{r}
+
+reg_mean <- ch_alldat %>%
+  group_by(region_x, year) %>%
+  dplyr::summarise(mean(h_score))
+
+
+p <- ggplot(data = reg_mean, mapping = aes(x= `mean(h_score)`, y= region_x, color = year)) +
+  geom_col() + theme_bw() + labs(x = "Year", y = "Happiness Score",
+                                   color = "Region")
+p
+
+```
+
+## Happiness and Phones  
+
+
+```{r}
+# ggplot(data = ch15, mapping = aes(y = h_score, x = phones_per_1000, color = region_x )) +
+#   geom_point()
+
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(phones_per_1000, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Phones per 1000", y = "Happiness Score",
+                                   color = "Region")
+
+p1 <- ch_alldat %>%
+  filter(year == 2019) %>%
+  ggplot(aes(phones_per_1000, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Phones per 1000", y = "Happiness Score",
+                                   color = "Region")
+
+ggplotly(p)
+ggplotly(p1)
+```
+
+## Happiness and Literacy
+
+```{r}
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(literacy_percent, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Literacy Percent", y = "Happiness Score",
+                                   color = "Region")
+ggplotly(p)
+```
+
+## Happiness and GDP per Capita
+```{r}
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(gdp_per_capita, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "GDP per Capita", y = "Happiness Score",
+                                   color = "Region")
+ggplotly(p)
+```
+
+```{r}
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(dystopia_res, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Dystopia Residual", y = "Happiness Score",
+                                   color = "Region")
+ggplotly(p)
+```
+## Infant Mortality and Happiness
+
+```{r}
+p <- ch_alldat %>%
+  filter(year == 2015) %>%
+  ggplot(aes(infant_mortality_per_1000_births, h_score, color = region_x, label = country)) +
+  geom_point() + theme_bw() + labs(x = "Infant Mortality (per 1000)", y = "Happiness Score",
+                                   color = "Region")
+ggplotly(p)
+```
+
+
+# Mean Happiness Score by Region
+
+```{r}
+regional_h <- ch_alldat %>%
+  group_by(region_x) %>%
+  dplyr::summarise(mean_score = mean(h_score)) %>%
+  arrange(desc(mean_score))
+
+reg_h_plot <- ggplot(regional_h, mapping = aes(x = mean_score, y = region_x, fill = region_x, 
+                                               label = mean_score)) + geom_col()
+reg_h_plot
+```
+
+
+# Modeling the Data
+
+For creating my model, I wanted to take a deeper dive into the 3 variables I thought 
+would be most influential. 
+
+```{r results = "asis", echo = TRUE, eval=T}
+model <- lm(h_score ~ gdp_per_capita + literacy_percent + infant_mortality_per_1000_births,
+            data = ch_alldat)
+
+stargazer(model, type = "html", omit = c("Constant"))
+
+```
+
+These 3 variables seem to have the highest correlation with happiness scores. GDP per capita, literacy percent, and infant mortality rates do make sense that they would have a large effect on happiness.
+
+# Final Analysis
+
+From looking at this data, we can say that if a country wants to improve their citizens happiness, they should look to raise their gdp, improve their education system and improve their healthcare system. Obviously this is not surprising and is very difficult to do in poor countries.
+
+
