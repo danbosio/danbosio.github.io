@@ -24,6 +24,12 @@ Wen Jing Lee
 Which variables seem to have the biggest impact on happiness, and does this vary by country to country?
 
 
+### The Data
+
+```{r}
+variable.names(ch_alldat)
+```
+
 ### Happiness and Phones
 
 ```{r}
